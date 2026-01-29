@@ -60,6 +60,10 @@ impl ScalarUDFImpl for SparkDateDiff {
         "date_diff"
     }
 
+    fn aliases(&self) -> &[String] {
+        &self.aliases
+    }
+
     fn signature(&self) -> &Signature {
         &self.signature
     }
@@ -78,11 +82,9 @@ impl ScalarUDFImpl for SparkDateDiff {
             _ => 1,
         };
 
-        // Convert both arguments to arrays of the same length
         let end_arr = end_date.into_array(len)?;
         let start_arr = start_date.into_array(len)?;
 
-        // Normalize dictionary arrays (important for Iceberg)
         let end_arr = arrow::compute::cast(&end_arr, &DataType::Date32)
             .map_err(|e| DataFusionError::Execution(e.to_string()))?;
         let start_arr = arrow::compute::cast(&start_arr, &DataType::Date32)
@@ -104,7 +106,6 @@ impl ScalarUDFImpl for SparkDateDiff {
                 )
             })?;
 
-        // Date32 stores days since epoch, so difference is just subtraction
         let result: Int32Array =
             binary(end_date_array, start_date_array, |end, start| end - start)?;
 
